@@ -75,7 +75,7 @@ class MarketingPerformanceSubTables extends \Piwik\Plugins\AOM\Platforms\Marketi
         $aomVisits = Db::fetchAssoc(
             'SELECT '
                 . '(CASE WHEN (LOCATE(\'campaignId\', platform_data) > 0) '
-                . 'THEN CONCAT(\'C\', SUBSTRING_INDEX(SUBSTR(platform_data, LOCATE(\'campaignId\', platform_data)+CHAR_LENGTH(\'campaignId\')+3),\'"\',1))'
+                . 'THEN CONCAT(\'C\', SUBSTRING_INDEX(SUBSTR(platform_data, LOCATE(\'campaignId\', platform_data)+CHAR_LENGTH(\'campaignId\')+2),\',"\',1))'
                 . 'ELSE CONCAT(\'C\', SUBSTRING_INDEX(SUBSTR(platform_data, LOCATE(\'campaign_id\', platform_data)+CHAR_LENGTH(\'campaign_id\')+3),\'"\',1))'
                 . 'END) AS campaignId, '
                 . 'COUNT(*) AS visits, COUNT(DISTINCT(piwik_idvisitor)) AS unique_visitors, SUM(conversions) AS conversions, SUM(revenue) AS revenue '
@@ -147,13 +147,13 @@ class MarketingPerformanceSubTables extends \Piwik\Plugins\AOM\Platforms\Marketi
         $aomVisits = Db::fetchAssoc(
             'SELECT '
                 . '(CASE WHEN (LOCATE(\'adGroupId\', platform_data) > 0) '
-                . 'THEN CONCAT(\'AG\', SUBSTRING_INDEX(SUBSTR(platform_data, LOCATE(\'adGroupId\', platform_data)+CHAR_LENGTH(\'adGroupId\')+3),\'"\',1))'
+                . 'THEN CONCAT(\'AG\', SUBSTRING_INDEX(SUBSTR(platform_data, LOCATE(\'adGroupId\', platform_data)+CHAR_LENGTH(\'adGroupId\')+2),\',"\',1))'
                 . 'ELSE CONCAT(\'AG\', SUBSTRING_INDEX(SUBSTR(platform_data, LOCATE(\'ad_group_id\', platform_data)+CHAR_LENGTH(\'ad_group_id\')+3),\'"\',1))'
                 . 'END) AS adGroupId, '
                 . 'COUNT(*) AS visits, COUNT(DISTINCT(piwik_idvisitor)) AS unique_visitors, SUM(conversions) AS conversions, SUM(revenue) AS revenue '
                 . 'FROM ' . Common::prefixTable('aom_visits') . ' '
                 . 'WHERE idsite = ? AND channel = ? AND date_website_timezone >= ? AND date_website_timezone <= ? AND (platform_data LIKE ? OR platform_data LIKE ?)'
-                . 'GROUP BY adGroupId',
+                . 'GROUP BY adGroupId ',
             [
                 $idSite,
                 AOM::PLATFORM_BING,
