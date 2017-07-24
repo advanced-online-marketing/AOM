@@ -74,7 +74,7 @@ class MarketingPerformanceSubTables extends \Piwik\Plugins\AOM\Platforms\Marketi
         $aomVisits = Db::fetchAssoc(
             'SELECT '
                 . '(CASE WHEN (LOCATE(\'campaignId\', platform_data) > 0) '
-                . 'THEN CONCAT(\'C\', SUBSTRING_INDEX(SUBSTR(platform_data, LOCATE(\'campaignId\', platform_data)+CHAR_LENGTH(\'campaignId\')+3),\'"\',1))'
+                . 'THEN CONCAT(\'C\', SUBSTRING_INDEX(SUBSTR(platform_data, LOCATE(\'campaignId\', platform_data)+CHAR_LENGTH(\'campaignId\')+2),\',"\',1))'
                 . 'ELSE CONCAT(\'C\', SUBSTRING_INDEX(SUBSTR(platform_data, LOCATE(\'campaign_id\', platform_data)+CHAR_LENGTH(\'campaign_id\')+3),\'"\',1))'
                 . 'END) AS campaignId, '
                 . 'COUNT(*) AS visits, COUNT(DISTINCT(piwik_idvisitor)) AS unique_visitors, SUM(conversions) AS conversions, SUM(revenue) AS revenue '
@@ -145,12 +145,12 @@ class MarketingPerformanceSubTables extends \Piwik\Plugins\AOM\Platforms\Marketi
         $aomVisits = Db::fetchAssoc(
             'SELECT '
                 . '(CASE WHEN (LOCATE(\'siteId\', platform_data) > 0) '
-                . 'THEN CONCAT(SUBSTRING_INDEX(SUBSTR(platform_data, LOCATE(\'siteId\', platform_data)+CHAR_LENGTH(\'siteId\')+3),\'"\',1))'
+                . 'THEN CONCAT(SUBSTRING_INDEX(SUBSTR(platform_data, LOCATE(\'siteId\', platform_data)+CHAR_LENGTH(\'siteId\')+2),\',"\',1))'
                 . 'ELSE CONCAT(SUBSTRING_INDEX(SUBSTR(platform_data, LOCATE(\'site_id\', platform_data)+CHAR_LENGTH(\'site_id\')+3),\'"\',1))'
                 . 'END) AS siteId, '
                 . 'COUNT(*) AS visits, COUNT(DISTINCT(piwik_idvisitor)) AS unique_visitors, SUM(conversions) AS conversions, SUM(revenue) AS revenue '
                 . 'FROM ' . Common::prefixTable('aom_visits') . ' '
-                . 'WHERE idsite = ? AND channel = ? AND date_website_timezone >= ? AND date_website_timezone <= ? AND (platform_data LIKE ? OR platform_data LIKE ?)'
+                . 'WHERE idsite = ? AND channel = ? AND date_website_timezone >= ? AND date_website_timezone <= ? AND (platform_data LIKE ? OR platform_data LIKE ?) '
                 . 'GROUP BY siteId',
             [
                 $idSite,
