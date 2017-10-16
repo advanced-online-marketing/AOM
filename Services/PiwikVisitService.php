@@ -33,11 +33,11 @@ class PiwikVisitService
     /**
      * This method should be called by the EventProcessor command by a cron every minute.
      */
-    public function checkForNewVisit()
+    public function checkForNewVisit($visit_batch_size = 500)
     {
-        // Limit to 500 visits to distribute work (if it has queued up for whatever reason)
+        // Limit visits to be processed in this batch to distribute work (if it has queued up for whatever reason)
         // TODO: Move limits to command/supervisor
-        foreach (array_slice($this->getUnprocessedVisits(), 0, 500) as $visit) {
+        foreach (array_slice($this->getUnprocessedVisits(), 0, $visit_batch_size) as $visit) {
             $this->addNewPiwikVisit($visit);
         }
     }
@@ -70,7 +70,7 @@ class PiwikVisitService
      *
      * TODO: Only consider e-commerce conversions?
      */
-    public function checkForNewConversion()
+    public function checkForNewConversion($conversion_batch_size = 100)
     {
         $c = count($this->getUnprocessedVisits());
         if ($c > 0) {
@@ -86,7 +86,7 @@ class PiwikVisitService
         // TODO: Move limits to command/supervisor
         foreach (Db::query('SELECT idconversion, idvisit, idsite, idorder, revenue '
             . ' FROM ' . Common::prefixTable('log_conversion') . ' WHERE idconversion > ' . $latestProcessedConversion
-            . ' ORDER BY idconversion ASC LIMIT 100') // Limit to distribute work (if it has queued up)
+            . ' ORDER BY idconversion ASC LIMIT '.$conversion_batch_size) // Limit to distribute work (if it has queued up)
                  as $conversion)
         {
             // For every single conversion: Increment visit's conversion count and add revenue
