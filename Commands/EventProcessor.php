@@ -40,7 +40,9 @@ class EventProcessor extends ConsoleCommand
     {
         $this
             ->setName('aom:process')
-            ->setDescription('Processes visits and conversions by updating aom_visits.');
+            ->setDescription('Processes visits and conversions by updating aom_visits.')
+            ->addOption('visit-batch-size', null, InputOption::VALUE_OPTIONAL, 'Size of the batch of visits to be processed (if queued up). Default is 500.', $default = 500);
+            ->addOption('conversion-batch-size', null, InputOption::VALUE_OPTIONAL, 'Size of the batch of visits to be processed (if queued up). Default is 100.', $default = 100);
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
@@ -57,10 +59,10 @@ class EventProcessor extends ConsoleCommand
         $piwikVisitService = new PiwikVisitService($this->logger);
 
         // Check if new visits have been created. If so, add this visit to aom_visits table.
-        $piwikVisitService->checkForNewVisit();
+        $piwikVisitService->checkForNewVisit($input->getOption('visit-batch-size')); // // Use what was provided via console/cli option as the visit batch size/count limit to be processed (default is 500 [set via Piwik command option default & function parameter defaults])
 
         // Check if new conversion have been created. If so, increment conversion counter and add revenue of visit.
-        $piwikVisitService->checkForNewConversion();
+        $piwikVisitService->checkForNewConversion($input->getOption('conversion-batch-size')); // Use what was provided via console/cli option as the conversion batch size/count limit to be processed (default is 100 [set via Piwik command option default & function parameter defaults])
 
         $this->logger->info('Completed aom:process run.');
     }
