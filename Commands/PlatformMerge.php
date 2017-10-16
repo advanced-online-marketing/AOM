@@ -39,18 +39,26 @@ class PlatformMerge extends ConsoleCommand
 
     protected function configure()
     {
-        $this
-            ->setName('aom:merge')
-            ->addOption('platform', null, InputOption::VALUE_REQUIRED)
-            ->addOption('startDate', null, InputOption::VALUE_REQUIRED, 'YYYY-MM-DD')
-            ->addOption('endDate', null, InputOption::VALUE_REQUIRED, 'YYYY-MM-DD')
-            ->setDescription('Merges an advertising platform\'s data for a specific period.');
+        $this->configureAOMMergeCommand($this);
+    }
+
+    protected function configureAOMMergeCommand(ConsoleCommand $command)
+    {
+        $command->setName('aom:merge');
+        $command->setDescription('Merges an advertising platform\'s data for a specific period.');
+        $command->addOption('platform', null, InputOption::VALUE_REQUIRED);
+        $command->addOption('startDate', null, InputOption::VALUE_REQUIRED, 'YYYY-MM-DD');
+        $command->addOption('endDate', null, InputOption::VALUE_REQUIRED, 'YYYY-MM-DD');
+        $command->addOption('memory-limit', null, InputOption::VALUE_OPTIONAL, 'Forwards the PHP memory_limit value to the PHP CLI command. For example `--memory-limit=2147483648` would result in the process being allowed 2GB of RAM. Default is to not specify this value and use the server\'s own memory_limit value.', $default = '');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        // We might need a little more RAM
-        ini_set('memory_limit','2048M');
+
+        // We might need a little more RAM than what the server's default memory_limit value is so check if the memory-limit option was specified.
+        if($input->getOption('memory-limit')){ // Use what was provided via console/cli option
+            ini_set('memory_limit',$input->getOption('memory-limit'));
+        }
 
         if (!in_array($input->getOption('platform'), AOM::getPlatforms())) {
             $this->logger->warning('Platform "' . $input->getOption('platform') . '" is not supported.');
