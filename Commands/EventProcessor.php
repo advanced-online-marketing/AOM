@@ -12,6 +12,7 @@ use Piwik\Plugins\AOM\AOM;
 use Piwik\Plugins\AOM\Services\PiwikVisitService;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
@@ -38,11 +39,16 @@ class EventProcessor extends ConsoleCommand
 
     protected function configure()
     {
-        $this
-            ->setName('aom:process')
-            ->setDescription('Processes visits and conversions by updating aom_visits.')
-            ->addOption('visit-batch-size', null, InputOption::VALUE_OPTIONAL, 'Size of the batch of visits to be processed (if queued up). Default is 500.', $default = 500);
-            ->addOption('conversion-batch-size', null, InputOption::VALUE_OPTIONAL, 'Size of the batch of visits to be processed (if queued up). Default is 100.', $default = 100);
+        $this->configureAOMProcessCommand($this);
+    }
+
+    // This is reused by another console command
+    public static function configureAOMProcessCommand(ConsoleCommand $command)
+    {
+	    $command->setName('aom:process');
+	    $command->setDescription('Processes visits and conversions by updating aom_visits.');
+	    $command->addOption('visit-batch-size', null, InputOption::VALUE_OPTIONAL, 'Size of the batch of visits to be processed (if queued up). Default is 500.', $default = 500);
+	    $command->addOption('conversion-batch-size', null, InputOption::VALUE_OPTIONAL, 'Size of the batch of visits to be processed (if queued up). Default is 100.', $default = 100);
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
