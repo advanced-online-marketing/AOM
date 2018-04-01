@@ -12,6 +12,7 @@ use Monolog\Formatter\LineFormatter;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 use Piwik\Common;
+use Piwik\Config;
 use Piwik\Db;
 use Piwik\Plugins\AOM\Platforms\ImporterInterface;
 use Piwik\Plugins\AOM\Platforms\MergerInterface;
@@ -66,12 +67,15 @@ class AOM extends \Piwik\Plugin
         // TODO: Allow to configure path and log-level (for every logger)?!
         $format = '%level_name% [%datetime%]: %message% %context% %extra%';
 
+
         self::$logger = new Logger('aom');
-        $fileStreamHandler = new StreamHandler(PIWIK_INCLUDE_PATH . '/aom.log', Logger::DEBUG);
-        $fileStreamHandler->setFormatter(new LineFormatter($format . "\n", null, true, true));
-        self::$logger->pushHandler($fileStreamHandler);
+        if(isset(Config::getInstance()->AOM['log_file'])) {
+            $fileStreamHandler = new StreamHandler(Config::getInstance()->AOM['log_file'], Logger::DEBUG);
+            $fileStreamHandler->setFormatter(new LineFormatter($format . "\n", null, true, true));
+            self::$logger->pushHandler($fileStreamHandler);
+        }
+
         $consoleStreamHandler = new StreamHandler('php://stdout', Logger::DEBUG);
-        $consoleStreamHandler->setFormatter(new ColoredLineFormatter(null, $format, null, true, true));
         self::$logger->pushHandler($consoleStreamHandler);
 
         parent::__construct($pluginName);
