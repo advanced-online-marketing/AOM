@@ -31,7 +31,7 @@ use Psr\Http\Message\RequestInterface;
  *
  * Requests will be accessed with the authorization header:
  *
- * 'Authorization' 'Bearer <value of auth_token>'
+ * 'authorization' 'Bearer <value of auth_token>'
  */
 class ScopedAccessTokenMiddleware
 {
@@ -113,7 +113,7 @@ class ScopedAccessTokenMiddleware
      *   $client = new Client([
      *       'handler' => $stack,
      *       'base_url' => 'https://www.googleapis.com/taskqueue/v1beta2/projects/',
-     *       'auth' => 'google_auth' // authorize all requests
+     *       'auth' => 'scoped' // authorize all requests
      *   ]);
      *
      *   $res = $client->get('myproject/taskqueues/myqueue');
@@ -130,7 +130,7 @@ class ScopedAccessTokenMiddleware
                 return $handler($request, $options);
             }
 
-            $request = $request->withHeader('Authorization', 'Bearer ' . $this->fetchToken());
+            $request = $request->withHeader('authorization', 'Bearer ' . $this->fetchToken());
 
             return $handler($request, $options);
         };

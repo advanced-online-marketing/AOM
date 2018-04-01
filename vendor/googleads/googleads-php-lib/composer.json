@@ -5,16 +5,17 @@
     "php": ">=5.5.9",
     "ext-openssl": "*",
     "ext-soap": "*",
-    "google/auth": "^0.11.0",
+    "google/auth": "^1.0.0",
     "guzzlehttp/guzzle": "^6.0",
     "guzzlehttp/psr7": "^1.2",
     "monolog/monolog": "^1.17.1",
-    "phpdocumentor/reflection-docblock": "^3.0.3",
-    "symfony/serializer": "^2.8.0 || ^3.0.3"
+    "phpdocumentor/reflection-docblock": "^4.0.0 || ^3.0.3",
+    "symfony/serializer": "^2.8.0 || ^3.0.3 || ^4.0.0"
   },
   "require-dev": {
     "php": ">=5.5.17",
-    "phpunit/phpunit": "^4.8"
+    "phpunit/phpunit": "^4.8.35 || ^5.7",
+    "squizlabs/php_codesniffer": "^2.9 || ^3.2"
   },
   "suggest": {
     "php-64bit": ">=5.5.9"
@@ -29,5 +30,9 @@
       "name": "Google",
       "homepage": "https://github.com/googleads/googleads-php-lib/contributors"
     }
-  ]
+  ],
+  "scripts": {
+    "pre-update-cmd": "@php check_conditions.php",
+    "pre-install-cmd": "@php check_conditions.php"
+  }
 }

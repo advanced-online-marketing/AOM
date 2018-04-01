@@ -18,9 +18,10 @@
 namespace Google\Auth\Tests;
 
 use Google\Auth\Cache\MemoryCacheItemPool;
+use PHPUnit\Framework\TestCase;
 use Psr\Cache\InvalidArgumentException;
 
-class MemoryCacheItemPoolTest extends \PHPUnit_Framework_TestCase
+class MemoryCacheItemPoolTest extends TestCase
 {
     private $pool;
 
@@ -159,12 +160,44 @@ class MemoryCacheItemPoolTest extends \PHPUnit_Framework_TestCase
      * @expectedException \Psr\Cache\InvalidArgumentException
      * @dataProvider invalidKeys
      */
-    public function testCheckInvalidKeys($key)
+    public function testCheckInvalidKeysOnGetItem($key)
     {
         $this->pool->getItem($key);
+    }
+
+    /**
+     * @expectedException \Psr\Cache\InvalidArgumentException
+     * @dataProvider invalidKeys
+     */
+    public function testCheckInvalidKeysOnGetItems($key)
+    {
         $this->pool->getItems([$key]);
+    }
+
+    /**
+     * @expectedException \Psr\Cache\InvalidArgumentException
+     * @dataProvider invalidKeys
+     */
+    public function testCheckInvalidKeysOnHasItem($key)
+    {
         $this->pool->hasItem($key);
+    }
+
+    /**
+     * @expectedException \Psr\Cache\InvalidArgumentException
+     * @dataProvider invalidKeys
+     */
+    public function testCheckInvalidKeysOnDeleteItem($key)
+    {
         $this->pool->deleteItem($key);
+    }
+
+    /**
+     * @expectedException \Psr\Cache\InvalidArgumentException
+     * @dataProvider invalidKeys
+     */
+    public function testCheckInvalidKeysOnDeleteItems($key)
+    {
         $this->pool->deleteItems([$key]);
     }
 
