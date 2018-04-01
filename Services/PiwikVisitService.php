@@ -5,6 +5,7 @@
  * @author Daniel Stonies <daniel.stonies@googlemail.com>
  * @author André Kolell <andre.kolell@gmail.com>
  */
+
 namespace Piwik\Plugins\AOM\Services;
 
 use Piwik\Common;
@@ -37,9 +38,12 @@ class PiwikVisitService
     {
         // Limit to 500 visits to distribute work (if it has queued up for whatever reason)
         // TODO: Move limits to command/supervisor
-        foreach (array_slice($this->getUnprocessedVisits(), 0, 500) as $visit) {
-            $this->addNewPiwikVisit($visit);
-        }
+        do {
+            $visits = $this->getUnprocessedVisits();
+            foreach ($visits as $visit) {
+                $this->addNewPiwikVisit($visit);
+            }
+        } while ($visits);
     }
 
     /**
@@ -52,69 +56,15 @@ class PiwikVisitService
 
         return Db::fetchAll(
             'SELECT v.*, conv(hex(v.idvisitor), 16, 10) AS idvisitor, entry_url.name AS entry_url, '
-                . ' entry_name.name AS entry_name '
-                . ' FROM ' . Common::prefixTable('log_visit') . ' AS v '
-                . ' LEFT JOIN ' . Common::prefixTable('log_action') . ' AS entry_name '
-                . ' ON v.visit_entry_idaction_name = entry_name.idaction'
-                . ' LEFT JOIN ' . Common::prefixTable('log_action') . ' AS entry_url '
-                . ' ON v.visit_entry_idaction_url = entry_url.idaction'
-                . ' WHERE v.idvisit > ' . ($latestProcessedPiwikVisit > 0 ? $latestProcessedPiwikVisit : 0)
-                . ' ORDER BY v.idvisit ASC'
+            . ' entry_name.name AS entry_name '
+            . ' FROM ' . Common::prefixTable('log_visit') . ' AS v '
+            . ' LEFT JOIN ' . Common::prefixTable('log_action') . ' AS entry_name '
+            . ' ON v.visit_entry_idaction_name = entry_name.idaction'
+            . ' LEFT JOIN ' . Common::prefixTable('log_action') . ' AS entry_url '
+            . ' ON v.visit_entry_idaction_url = entry_url.idaction'
+            . ' WHERE v.idvisit > ' . ($latestProcessedPiwikVisit > 0 ? $latestProcessedPiwikVisit : 0)
+            . ' ORDER BY v.idvisit ASC LIMIT 500'
         );
-    }
-
-    /**
-     * This method should be called by the EventProcessor command by a cron every minute.
-     * It detects if new conversion have been created. If so, it adds the conversion-related information to the
-     * aom_visits table.
-     *
-     * TODO: Only consider e-commerce conversions?
-     */
-    public function checkForNewConversion()
-    {
-        $c = count($this->getUnprocessedVisits());
-        if ($c > 0) {
-            $this->logger->info('Skip checking for new conversions as there are still '. $c . ' unprocessed visits.');
-            return;
-        }
-
-        $latestProcessedConversion = Option::get('Plugin_AOM_LatestProcessedConversion');
-        if (false === $latestProcessedConversion) {
-            $latestProcessedConversion = 0;
-        }
-
-        // TODO: Move limits to command/supervisor
-        foreach (Db::query('SELECT idconversion, idvisit, idsite, idorder, revenue '
-            . ' FROM ' . Common::prefixTable('log_conversion') . ' WHERE idconversion > ' . $latestProcessedConversion
-            . ' ORDER BY idconversion ASC LIMIT 100') // Limit to distribute work (if it has queued up)
-                 as $conversion)
-        {
-            // For every single conversion: Increment visit's conversion count and add revenue
-            $result = Db::query(
-                'UPDATE ' . Common::prefixTable('aom_visits') . ' SET '
-                    . ' conversions = IFNULL(conversions, 0) + 1, revenue = IFNULL(revenue, 0) + ?, '
-                    . ' ts_last_update = NOW() '
-                    . ' WHERE unique_hash = ?',
-                [
-                    $conversion['revenue'],
-                    'piwik-visit-' . $conversion['idvisit'],    // We use unique_hash to use an existing index.
-                ]
-            );
-            if (1 === $result->rowCount()) {
-                $this->logger->debug(
-                    'Added conversion ' . $conversion['idconversion'] . ' (' . $conversion['idorder'] . ')'
-                        . ' to Piwik visit ' . $conversion['idvisit'] . ' in aom_visits table.'
-                );
-                self::postAomVisitAddedOrUpdatedEvent($conversion['idvisit']);
-            } else {
-                $this->logger->error(
-                    'Could not add conversion ' . $conversion['idconversion'] . ' (' . $conversion['idorder'] . ') as '
-                        . 'visit ' . $conversion['idvisit'] . ' was not found in aom_visits table.'
-                );
-            }
-
-            Option::set('Plugin_AOM_LatestProcessedConversion', $conversion['idconversion'], 1);
-        }
     }
 
     /**
@@ -147,10 +97,10 @@ class PiwikVisitService
         $platformData = ($mergerPlatformDataOfVisit ? $mergerPlatformDataOfVisit->getPlatformData() : null);
         Db::query(
             'INSERT INTO ' . Common::prefixTable('aom_visits')
-                . ' (idsite, piwik_idvisit, piwik_idvisitor, unique_hash, first_action_time_utc, '
-                . ' date_website_timezone, channel, campaign_data, platform_data, platform_key, ts_created, '
-                . ' ts_last_update) '
-                . ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())',
+            . ' (idsite, piwik_idvisit, piwik_idvisitor, unique_hash, first_action_time_utc, '
+            . ' date_website_timezone, channel, campaign_data, platform_data, platform_key, ts_created, '
+            . ' ts_last_update) '
+            . ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())',
             [
                 $idsite,
                 $visit['idvisit'],
@@ -194,7 +144,7 @@ class PiwikVisitService
             return $aomPlatform;
         } elseif (Common::REFERRER_TYPE_DIRECT_ENTRY == $refererType) {
             return 'direct';
-        } elseif (Common::REFERRER_TYPE_SEARCH_ENGINE== $refererType) {
+        } elseif (Common::REFERRER_TYPE_SEARCH_ENGINE == $refererType) {
             return 'seo';
         } elseif (Common::REFERRER_TYPE_WEBSITE == $refererType) {
             return 'website';
@@ -254,5 +204,63 @@ class PiwikVisitService
         );
 
 //        var_dump('Posted AOM.aomVisitAddedOrUpdated for aomVisitId ' . $aomVisitId . '.');
+    }
+
+    /**
+     * This method should be called by the EventProcessor command by a cron every minute.
+     * It detects if new conversion have been created. If so, it adds the conversion-related information to the
+     * aom_visits table.
+     *
+     * TODO: Only consider e-commerce conversions?
+     */
+    public function checkForNewConversion()
+    {
+        $c = count($this->getUnprocessedVisits());
+        if ($c > 0) {
+            $this->logger->info('Skip checking for new conversions as there are still ' . $c . ' unprocessed visits.');
+            return;
+        }
+
+        do {
+            $latestProcessedConversion = Option::get('Plugin_AOM_LatestProcessedConversion');
+            if (false === $latestProcessedConversion) {
+                $latestProcessedConversion = 0;
+            }
+
+            $conversions = Db::fetchAll('SELECT idconversion, idvisit, idsite, idorder, revenue '
+                . ' FROM ' . Common::prefixTable('log_conversion') . ' WHERE idconversion > ' . $latestProcessedConversion
+                . ' ORDER BY idconversion ASC LIMIT 100'); // Limit to distribute work (if it has queued up)
+
+            foreach ($conversions as $conversion) {
+                // For every single conversion: Increment visit's conversion count and add revenue
+                $result = Db::query(
+                    'UPDATE ' . Common::prefixTable('aom_visits') . ' SET '
+                    . ' conversions = IFNULL(conversions, 0) + 1, revenue = IFNULL(revenue, 0) + ?, '
+                    . ' ts_last_update = NOW() '
+                    . ' WHERE unique_hash = ?',
+                    [
+                        $conversion['revenue'],
+                        'piwik-visit-' . $conversion['idvisit'],    // We use unique_hash to use an existing index.
+                    ]
+                );
+                if (1 === $result->rowCount()) {
+                    $this->logger->debug(
+                        'Added conversion ' . $conversion['idconversion'] . ' (' . $conversion['idorder'] . ')'
+                        . ' to Piwik visit ' . $conversion['idvisit'] . ' in aom_visits table.'
+                    );
+                    self::postAomVisitAddedOrUpdatedEvent($conversion['idvisit']);
+                } else {
+                    $this->logger->error(
+                        'Could not add conversion ' . $conversion['idconversion'] . ' (' . $conversion['idorder'] . ') as '
+                        . 'visit ' . $conversion['idvisit'] . ' was not found in aom_visits table.'
+                    );
+                }
+
+                Option::set('Plugin_AOM_LatestProcessedConversion', $conversion['idconversion'], 1);
+            }
+
+        } while ($conversions);
+
+
     }
 }

@@ -628,6 +628,16 @@ class ObjectNormalizerTest extends TestCase
         $serializer->denormalize(array('inners' => array('a' => array('foo' => 1))), ObjectOuter::class);
     }
 
+    public function testDoNotRejectInvalidTypeOnDisableTypeEnforcementContextOption()
+    {
+        $extractor = new PropertyInfoExtractor(array(), array(new PhpDocExtractor()));
+        $normalizer = new ObjectNormalizer(null, null, null, $extractor);
+        $serializer = new Serializer(array($normalizer));
+        $context = array(ObjectNormalizer::DISABLE_TYPE_ENFORCEMENT => true);
+
+        $this->assertSame('foo', $serializer->denormalize(array('number' => 'foo'), JsonNumber::class, null, $context)->number);
+    }
+
     public function testExtractAttributesRespectsFormat()
     {
         $normalizer = new FormatAndContextAwareNormalizer();
@@ -673,6 +683,16 @@ class ObjectNormalizerTest extends TestCase
             ),
             $serializer->normalize($objectDummy, null, $context)
         );
+
+        $context = array('attributes' => array('foo', 'baz', 'object'));
+        $this->assertEquals(
+            array(
+                'foo' => 'foo',
+                'baz' => true,
+                'object' => array('foo' => 'innerFoo', 'bar' => 'innerBar'),
+            ),
+            $serializer->normalize($objectDummy, null, $context)
+        );
     }
 
     public function testAttributesContextDenormalize()
@@ -712,6 +732,37 @@ class ObjectNormalizerTest extends TestCase
             'foo' => 'b',
             'inner' => array('foo' => 'foo', 'bar' => 'bar'),
         ), DummyWithConstructorObjectAndDefaultValue::class, null, $context));
+    }
+
+    public function testNormalizeSameObjectWithDifferentAttributes()
+    {
+        $classMetadataFactory = new ClassMetadataFactory(new AnnotationLoader(new AnnotationReader()));
+        $this->normalizer = new ObjectNormalizer($classMetadataFactory);
+        $serializer = new Serializer(array($this->normalizer));
+        $this->normalizer->setSerializer($serializer);
+
+        $dummy = new ObjectOuter();
+        $dummy->foo = new ObjectInner();
+        $dummy->foo->foo = 'foo.foo';
+        $dummy->foo->bar = 'foo.bar';
+
+        $dummy->bar = new ObjectInner();
+        $dummy->bar->foo = 'bar.foo';
+        $dummy->bar->bar = 'bar.bar';
+
+        $this->assertEquals(array(
+            'foo' => array(
+                'bar' => 'foo.bar',
+            ),
+            'bar' => array(
+                'foo' => 'bar.foo',
+            ),
+        ), $this->normalizer->normalize($dummy, 'json', array(
+            'attributes' => array(
+                'foo' => array('bar'),
+                'bar' => array('foo'),
+            ),
+        )));
     }
 }
 

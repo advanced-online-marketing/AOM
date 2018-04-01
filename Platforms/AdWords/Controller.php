@@ -78,7 +78,7 @@ class Controller extends \Piwik\Plugins\AOM\Platforms\Controller
         // We must pass our internal AdWords account ID in the "state" param to get it back in Google's redirect.
         // The name of this param must be "state" according to Google OAuth.
         $oauth2 = new OAuth2([
-            'authorizationUri' => 'https://accounts.google.com/o/oauth2/v2/auth',
+            'authorizationUri' => 'https://accounts.google.com/o/oauth2/auth',
             'redirectUri' => $this->getRedirectURI(),
             'tokenCredentialUri' => CredentialsLoader::TOKEN_CREDENTIAL_URI,
             'clientId' => $account['clientId'],
@@ -127,7 +127,7 @@ class Controller extends \Piwik\Plugins\AOM\Platforms\Controller
         $account = $configuration[AOM::PLATFORM_AD_WORDS]['accounts'][$id];
 
         $oauth2 = new OAuth2([
-            'authorizationUri' => 'https://accounts.google.com/o/oauth2/v2/auth',
+            'authorizationUri' => 'https://accounts.google.com/o/oauth2/auth',
             'redirectUri' => $this->getRedirectURI(),
             'tokenCredentialUri' => CredentialsLoader::TOKEN_CREDENTIAL_URI,
             'clientId' => $account['clientId'],

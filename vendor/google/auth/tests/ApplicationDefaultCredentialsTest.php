@@ -21,8 +21,9 @@ use Google\Auth\ApplicationDefaultCredentials;
 use Google\Auth\Credentials\GCECredentials;
 use Google\Auth\Credentials\ServiceAccountCredentials;
 use GuzzleHttp\Psr7;
+use PHPUnit\Framework\TestCase;
 
-class ADCGetTest extends \PHPUnit_Framework_TestCase
+class ADCGetTest extends TestCase
 {
     private $originalHome;
 
@@ -101,7 +102,7 @@ class ADCGetTest extends \PHPUnit_Framework_TestCase
     }
 }
 
-class ADCGetMiddlewareTest extends \PHPUnit_Framework_TestCase
+class ADCGetMiddlewareTest extends TestCase
 {
     private $originalHome;
 
@@ -154,6 +155,26 @@ class ADCGetMiddlewareTest extends \PHPUnit_Framework_TestCase
         ]);
 
         ApplicationDefaultCredentials::getMiddleware('a scope', $httpHandler);
+    }
+
+    public function testWithCacheOptions()
+    {
+        $keyFile = __DIR__ . '/fixtures' . '/private.json';
+        putenv(ServiceAccountCredentials::ENV_VAR . '=' . $keyFile);
+
+        $httpHandler = getHandler([
+            buildResponse(200),
+        ]);
+
+        $cacheOptions = [];
+        $cachePool = $this->getMock('Psr\Cache\CacheItemPoolInterface');
+
+        $middleware = ApplicationDefaultCredentials::getMiddleware(
+            'a scope',
+            $httpHandler,
+            $cacheOptions,
+            $cachePool
+        );
     }
 
     public function testSuccedsIfNoDefaultFilesButIsOnGCE()
@@ -277,6 +298,26 @@ class ADCGetSubscriberTest extends BaseTest
         ]);
 
         ApplicationDefaultCredentials::getSubscriber('a scope', $httpHandler);
+    }
+
+    public function testWithCacheOptions()
+    {
+        $keyFile = __DIR__ . '/fixtures' . '/private.json';
+        putenv(ServiceAccountCredentials::ENV_VAR . '=' . $keyFile);
+
+        $httpHandler = getHandler([
+            buildResponse(200),
+        ]);
+
+        $cacheOptions = [];
+        $cachePool = $this->getMock('Psr\Cache\CacheItemPoolInterface');
+
+        $subscriber = ApplicationDefaultCredentials::getSubscriber(
+            'a scope',
+            $httpHandler,
+            $cacheOptions,
+            $cachePool
+        );
     }
 
     public function testSuccedsIfNoDefaultFilesButIsOnGCE()

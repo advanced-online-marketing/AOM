@@ -8,8 +8,8 @@
 namespace Piwik\Plugins\AOM\Platforms\AdWords;
 
 use Google\AdsApi\AdWords\AdWordsSession;
-use Google\AdsApi\AdWords\Reporting\v201708\DownloadFormat;
-use Google\AdsApi\AdWords\Reporting\v201708\ReportDownloader;
+use Google\AdsApi\AdWords\Reporting\v201802\DownloadFormat;
+use Google\AdsApi\AdWords\Reporting\v201802\ReportDownloader;
 use Monolog\Logger;
 use Piwik\Db;
 use Piwik\Plugins\AOM\AOM;
