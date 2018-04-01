@@ -12,6 +12,7 @@ use Piwik\Plugins\AOM\AOM;
 use Piwik\Plugins\AOM\Services\PiwikVisitService;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
@@ -38,15 +39,24 @@ class EventProcessor extends ConsoleCommand
 
     protected function configure()
     {
-        $this
-            ->setName('aom:process')
-            ->setDescription('Processes visits and conversions by updating aom_visits.');
+        $this->configureAOMProcessCommand($this);
+    }
+
+    // This is reused by another console command
+    public static function configureAOMProcessCommand(ConsoleCommand $command)
+    {
+	    $command->setName('aom:process');
+	    $command->setDescription('Processes visits and conversions by updating aom_visits.');
+	    $command->addOption('memory-limit', null, InputOption::VALUE_OPTIONAL, 'Forwards the PHP memory_limit value to the PHP CLI command. For example `--memory-limit=2147483648` would result in the process being allowed 2GB of RAM. Default is to not specify this value and use the server\'s own memory_limit value.', $default = '');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        // We might need a little more RAM
-        ini_set('memory_limit','1024M');
+
+        // We might need a little more RAM than what the server's default memory_limit value is so check if the memory-limit option was specified.
+        if($input->getOption('memory-limit')){ // Use what was provided via console/cli option
+            ini_set('memory_limit',$input->getOption('memory-limit'));
+        }
 
         $this->logger->info('Starting aom:process run.');
 
