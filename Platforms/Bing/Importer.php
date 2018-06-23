@@ -3,6 +3,7 @@
  * AOM - Piwik Advanced Online Marketing Plugin
  *
  * @author Daniel Stonies <daniel.stonies@googlemail.com>
+ * @author André Kolell <andre.kolell@gmail.com>
  */
 namespace Piwik\Plugins\AOM\Platforms\Bing;
 
@@ -67,6 +68,10 @@ class Importer extends AbstractImporter implements ImporterInterface
         $this->deleteExistingData(AOM::PLATFORM_BING, $accountId, $account['websiteId'], $date);
 
         $data = $this->getBingReport($accountId, $account, $date);
+        if (!$data) {
+            $this->log(Logger::WARNING, 'Importing Bing account ' . $accountId. ' for date ' . $date . ' failed.');
+            return;
+        }
 
         $result = simplexml_load_string($data);
         foreach ($result->Table->Row as $row) {
@@ -108,11 +113,14 @@ class Importer extends AbstractImporter implements ImporterInterface
      * @param $accountId
      * @param $account
      * @param $date
+     * @return bool
      */
     public function getBingReport($accountId, $account, $date)
     {
         // Always refresh access token as it expires after 60m
-        $this->refreshAccessToken($accountId, $account);
+        if (!$this->refreshAccessToken($accountId, $account)) {
+            return false;
+        }
 
         try {
             $proxy = ClientProxy::ConstructWithAccountId(
@@ -229,14 +237,21 @@ class Importer extends AbstractImporter implements ImporterInterface
             }
 
         } catch (SoapFault $e) {
-            // Output the last request/response.
 
-            print "\nLast SOAP request/response:\n";
-            print $proxy->GetWsdl() . "\n";
-            print $this->formatXmlString($proxy->GetService()->__getLastRequest()) . "\n";
-            print $this->formatXmlString($proxy->GetService()->__getLastResponse()) . "\n";
+            if ($proxy === null) {
+                print 'Proxy is null';
+            }
+
+            // Output the last request/response.
+            if ($proxy) {
+                print "\nLast SOAP request/response:\n";
+                print $proxy->GetWsdl() . "\n";
+                print $this->formatXmlString($proxy->GetService()->__getLastRequest()) . "\n";
+                print $this->formatXmlString($proxy->GetService()->__getLastResponse()) . "\n";
+            }
 
             // Reporting service operations can throw AdApiFaultDetail.
+
         } catch (Exception $e) {
             if ($e->getPrevious()) {
                 ; // Ignore fault exceptions that we already caught.
@@ -247,13 +262,12 @@ class Importer extends AbstractImporter implements ImporterInterface
         }
     }
 
-
-    //
     /**
      * TODO: There is a similar method in Bing/Controller.php.
      *
      * @param string $accountId
      * @param array $account
+     * @return bool
      */
     private function refreshAccessToken($accountId, &$account)
     {
@@ -276,6 +290,11 @@ class Importer extends AbstractImporter implements ImporterInterface
         $response = Bing::urlPostContents($postUrl, $postFields);
 
         $data = json_decode($response, true);
+
+        if (!array_key_exists('access_token', $data)) {
+            $this->log(Logger::WARNING, 'Refreshing the access token failed.');
+            return false;
+        }
 
         $account['accessToken'] = $data['access_token'];
 
