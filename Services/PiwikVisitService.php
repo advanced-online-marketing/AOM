@@ -13,6 +13,7 @@ use Piwik\Db;
 use Piwik\Option;
 use Piwik\Piwik;
 use Piwik\Plugins\AOM\AOM;
+use Piwik\Plugins\AOM\Exceptions\SiteNotFoundException;
 use Piwik\Plugins\AOM\Platforms\MergerInterface;
 use Psr\Log\LoggerInterface;
 
@@ -72,11 +73,21 @@ class PiwikVisitService
      * Conversions and revenue are added to visits by the checkForNewConversion method.
      *
      * @param array $visit
+     * @throws \Exception
      */
     private function addNewPiwikVisit(array $visit)
     {
         $idsite = $visit['idsite'];
-        $date = substr(AOM::convertUTCToLocalDateTime($visit['visit_first_action_time'], $visit['idsite']), 0, 10);
+        try {
+            $date = substr(AOM::convertUTCToLocalDateTime($visit['visit_first_action_time'], $visit['idsite']), 0, 10);
+        } catch (SiteNotFoundException $e) {
+            $this->logger->debug(
+                'Skipped Piwik visit ' . $visit['idvisit'] . ' as site ' . $visit['idsite'] . ' or site\'s timezone '
+                    . 'does not exist (the site might have been deleted).'
+            );
+
+            return;
+        }
 
         /** @var MergerInterface $platformMerger */
         $platformMerger = $visit['aom_platform'] ? AOM::getPlatformInstance($visit['aom_platform'], 'Merger') : null;
@@ -251,8 +262,8 @@ class PiwikVisitService
                     self::postAomVisitAddedOrUpdatedEvent($conversion['idvisit']);
                 } else {
                     $this->logger->error(
-                        'Could not add conversion ' . $conversion['idconversion'] . ' (' . $conversion['idorder'] . ') as '
-                        . 'visit ' . $conversion['idvisit'] . ' was not found in aom_visits table.'
+                        'Could not add conversion ' . $conversion['idconversion'] . ' (' . $conversion['idorder'] . ') '
+                            . 'as visit ' . $conversion['idvisit'] . ' was not found in aom_visits table.'
                     );
                 }
 
@@ -260,7 +271,5 @@ class PiwikVisitService
             }
 
         } while ($conversions);
-
-
     }
 }
