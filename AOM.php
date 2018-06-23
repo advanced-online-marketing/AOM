@@ -14,6 +14,7 @@ use Monolog\Logger;
 use Piwik\Common;
 use Piwik\Config;
 use Piwik\Db;
+use Piwik\Plugins\AOM\Exceptions\SiteNotFoundException;
 use Piwik\Plugins\AOM\Platforms\ImporterInterface;
 use Piwik\Plugins\AOM\Platforms\MergerInterface;
 use Piwik\Plugins\AOM\Platforms\PlatformInterface;
@@ -255,7 +256,7 @@ class AOM extends \Piwik\Plugin
      * @param string $dateTime
      * @param int $idsite
      * @return string
-     * @throws \Exception
+     * @throws SiteNotFoundException
      */
     public static function convertUTCToLocalDateTime($dateTime, $idsite)
     {
@@ -267,7 +268,7 @@ class AOM extends \Piwik\Plugin
         );
 
         if (!$timezone) {
-            throw new \Exception('No timezone found for website id ' . $idsite);
+            throw new SiteNotFoundException('Either site not found or timezone empty for website id ' . $idsite);
         }
 
         $date = new \DateTime($dateTime);
