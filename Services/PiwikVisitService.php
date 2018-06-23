@@ -59,6 +59,11 @@ class PiwikVisitService
             'SELECT v.*, conv(hex(v.idvisitor), 16, 10) AS idvisitor, entry_url.name AS entry_url, '
             . ' entry_name.name AS entry_name '
             . ' FROM ' . Common::prefixTable('log_visit') . ' AS v '
+
+            // Only consider visits of sites that still exist
+            . ' JOIN ' . Common::prefixTable('site') . ' AS s '
+            . ' ON v.idsite = s.idsite'
+
             . ' LEFT JOIN ' . Common::prefixTable('log_action') . ' AS entry_name '
             . ' ON v.visit_entry_idaction_name = entry_name.idaction'
             . ' LEFT JOIN ' . Common::prefixTable('log_action') . ' AS entry_url '
@@ -238,8 +243,14 @@ class PiwikVisitService
                 $latestProcessedConversion = 0;
             }
 
-            $conversions = Db::fetchAll('SELECT idconversion, idvisit, idsite, idorder, revenue '
-                . ' FROM ' . Common::prefixTable('log_conversion') . ' WHERE idconversion > ' . $latestProcessedConversion
+            $conversions = Db::fetchAll('SELECT idconversion, idvisit, c.idsite AS idsite, idorder, revenue '
+                . ' FROM ' . Common::prefixTable('log_conversion') . ' AS c '
+
+                // Only consider conversions of sites that still exist
+                . ' JOIN ' . Common::prefixTable('site') . ' AS s '
+                . ' ON c.idsite = s.idsite'
+
+                . ' WHERE idconversion > ' . $latestProcessedConversion
                 . ' ORDER BY idconversion ASC LIMIT 100'); // Limit to distribute work (if it has queued up)
 
             foreach ($conversions as $conversion) {
