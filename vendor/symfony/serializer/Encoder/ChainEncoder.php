@@ -20,14 +20,14 @@ use Symfony\Component\Serializer\Exception\RuntimeException;
  * @author Johannes M. Schmitt <schmittjoh@gmail.com>
  * @author Lukas Kahwe Smith <smith@pooteeweet.org>
  *
- * @final since version 3.3.
+ * @final
  */
-class ChainEncoder implements EncoderInterface /*, ContextAwareEncoderInterface*/
+class ChainEncoder implements ContextAwareEncoderInterface
 {
-    protected $encoders = array();
-    protected $encoderByFormat = array();
+    protected $encoders = [];
+    protected $encoderByFormat = [];
 
-    public function __construct(array $encoders = array())
+    public function __construct(array $encoders = [])
     {
         $this->encoders = $encoders;
     }
@@ -35,7 +35,7 @@ class ChainEncoder implements EncoderInterface /*, ContextAwareEncoderInterface*
     /**
      * {@inheritdoc}
      */
-    final public function encode($data, $format, array $context = array())
+    final public function encode($data, $format, array $context = [])
     {
         return $this->getEncoder($format, $context)->encode($data, $format, $context);
     }
@@ -43,10 +43,8 @@ class ChainEncoder implements EncoderInterface /*, ContextAwareEncoderInterface*
     /**
      * {@inheritdoc}
      */
-    public function supportsEncoding($format/*, array $context = array()*/)
+    public function supportsEncoding($format, array $context = []): bool
     {
-        $context = func_num_args() > 1 ? func_get_arg(1) : array();
-
         try {
             $this->getEncoder($format, $context);
         } catch (RuntimeException $e) {
@@ -58,15 +56,9 @@ class ChainEncoder implements EncoderInterface /*, ContextAwareEncoderInterface*
 
     /**
      * Checks whether the normalization is needed for the given format.
-     *
-     * @param string $format
-     * @param array  $context
-     *
-     * @return bool
      */
-    public function needsNormalization($format/*, array $context = array()*/)
+    public function needsNormalization(string $format, array $context = []): bool
     {
-        $context = func_num_args() > 1 ? func_get_arg(1) : array();
         $encoder = $this->getEncoder($format, $context);
 
         if (!$encoder instanceof NormalizationAwareInterface) {
@@ -83,14 +75,9 @@ class ChainEncoder implements EncoderInterface /*, ContextAwareEncoderInterface*
     /**
      * Gets the encoder supporting the format.
      *
-     * @param string $format
-     * @param array  $context
-     *
-     * @return EncoderInterface
-     *
      * @throws RuntimeException if no encoder is found
      */
-    private function getEncoder($format, array $context)
+    private function getEncoder(string $format, array $context): EncoderInterface
     {
         if (isset($this->encoderByFormat[$format])
             && isset($this->encoders[$this->encoderByFormat[$format]])

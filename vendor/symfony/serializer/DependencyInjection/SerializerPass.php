@@ -11,9 +11,9 @@
 
 namespace Symfony\Component\Serializer\DependencyInjection;
 
+use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\Compiler\PriorityTaggedServiceTrait;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
-use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\Exception\RuntimeException;
 
 /**
@@ -31,7 +31,7 @@ class SerializerPass implements CompilerPassInterface
     private $normalizerTag;
     private $encoderTag;
 
-    public function __construct($serializerService = 'serializer', $normalizerTag = 'serializer.normalizer', $encoderTag = 'serializer.encoder')
+    public function __construct(string $serializerService = 'serializer', string $normalizerTag = 'serializer.normalizer', string $encoderTag = 'serializer.encoder')
     {
         $this->serializerService = $serializerService;
         $this->normalizerTag = $normalizerTag;

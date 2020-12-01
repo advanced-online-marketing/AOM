@@ -4,11 +4,11 @@
  *
  * @author Daniel Stonies <daniel.stonies@googlemail.com>
  */
+
 namespace Piwik\Plugins\AOM\Platforms\FacebookAds;
 
-use Facebook\Exceptions\FacebookResponseException;
-use Facebook\Exceptions\FacebookSDKException;
-use Facebook\Facebook;
+use Exception;
+use League\OAuth2\Client\Provider\Facebook;
 use Piwik\Common;
 use Piwik\Option;
 use Piwik\Piwik;
@@ -32,12 +32,12 @@ class Controller extends \Piwik\Plugins\AOM\Platforms\Controller
         $configuration = $settings->getConfiguration();
 
         $configuration[AOM::PLATFORM_FACEBOOK_ADS]['accounts'][uniqid('', true)] = [
-            'websiteId' => $websiteId,
-            'clientId' => $clientId,
+            'websiteId'    => $websiteId,
+            'clientId'     => $clientId,
             'clientSecret' => $clientSecret,
-            'accountId' => $accountId,
-            'accessToken' => null,
-            'active' => true,
+            'accountId'    => $accountId,
+            'accessToken'  => null,
+            'active'       => true,
         ];
 
         $settings->setConfiguration($configuration);
@@ -66,15 +66,13 @@ class Controller extends \Piwik\Plugins\AOM\Platforms\Controller
             $idSites = [$configuration[AOM::PLATFORM_FACEBOOK_ADS]['accounts'][$id]['websiteId']]
         );
 
-        $fb = $this->getFacebookApiClient($configuration, $id);
-        $helper = $fb->getRedirectLoginHelper();
-        $loginUrl = $helper->getLoginUrl(
-            Option::get('piwikUrl')
-                . '?module=AOM&action=platformAction&platform=FacebookAds&method=processAccessTokenCode&id=' . $id,
-            ['ads_read']
-        );
+        $provider = $this->getFacebookAuthProvider($configuration, $id);
+        // If we don't have an authorization code then get one
+        $authUrl = $provider->getAuthorizationUrl(['scope' => ['ads_read']]);
+        $_SESSION['oauth2state'] = $provider->getState();
+        $_SESSION['aom_facebook_website_id'] = $id;
 
-        header('Location: ' . $loginUrl);
+        header('Location: ' . $authUrl);
         exit;
     }
 
@@ -88,8 +86,14 @@ class Controller extends \Piwik\Plugins\AOM\Platforms\Controller
         $settings = new SystemSettings();
         $configuration = $settings->getConfiguration();
 
-        // Does the account exist?
-        $id = Common::getRequestVar('id', false);
+        if (empty($_GET['state']) || ($_GET['state'] !== $_SESSION['oauth2state'])) {
+            unset($_SESSION['oauth2state']);
+            echo 'Invalid state.';
+            exit;
+        }
+
+        $id = $_SESSION['aom_facebook_website_id'];
+
         if (!array_key_exists($id, $configuration[AOM::PLATFORM_FACEBOOK_ADS]['accounts'])) {
             throw new \Exception('Facebook Ads account "' . $id . '" does not exist.');
         }
@@ -98,28 +102,24 @@ class Controller extends \Piwik\Plugins\AOM\Platforms\Controller
             $idSites = [$configuration[AOM::PLATFORM_FACEBOOK_ADS]['accounts'][$id]['websiteId']]
         );
 
-        $fb = $this->getFacebookApiClient($configuration, $id);
-        $helper = $fb->getRedirectLoginHelper();
+        $provider = $this->getFacebookAuthProvider($configuration, $id);
+
+        $token = $provider->getAccessToken('authorization_code', [
+            'code' => $_GET['code'],
+        ]);
 
         try {
-            $accessToken = $helper->getAccessToken();
-        } catch (FacebookResponseException $e) {
-            throw new \Exception('Graph returned an error: ' . $e->getMessage());
-        } catch (FacebookSDKException $e) {
-            throw new \Exception('Facebook SDK returned an error: ' . $e->getMessage());
+            $token = $provider->getLongLivedAccessToken($token);
+        } catch (Exception $e) {
+            echo 'Failed to exchange the token: ' . $e->getMessage();
+            exit();
         }
 
-        if (isset($accessToken)) {
+        $configuration[AOM::PLATFORM_FACEBOOK_ADS]['accounts'][$id]['accessToken'] = $token->getToken();
+        $settings->setConfiguration($configuration);
 
-            $configuration[AOM::PLATFORM_FACEBOOK_ADS]['accounts'][$id]['accessToken'] = $accessToken->getValue();
-            $settings->setConfiguration($configuration);
-
-            header('Location: ?module=AOM&action=settings');
-            exit;
-
-        } elseif ($helper->getError()) {
-            throw new \Exception('The user denied the request.');
-        }
+        header('Location: ?module=AOM&action=settings');
+        exit;
     }
 
     /**
@@ -127,14 +127,13 @@ class Controller extends \Piwik\Plugins\AOM\Platforms\Controller
      * @param string $id
      * @return Facebook
      */
-    private function getFacebookApiClient($configuration, $id)
+    private function getFacebookAuthProvider($configuration, $id)
     {
-        $fb = new Facebook([
-            'app_id' => $configuration[AOM::PLATFORM_FACEBOOK_ADS]['accounts'][$id]['clientId'],
-            'app_secret' => $configuration[AOM::PLATFORM_FACEBOOK_ADS]['accounts'][$id]['clientSecret'],
-            'default_graph_version' => 'v2.5',
+        return new Facebook([
+            'clientId'        => $configuration[AOM::PLATFORM_FACEBOOK_ADS]['accounts'][$id]['clientId'],
+            'clientSecret'    => $configuration[AOM::PLATFORM_FACEBOOK_ADS]['accounts'][$id]['clientSecret'],
+            'redirectUri'     => Option::get('piwikUrl') . '?module=AOM&action=platformAction&platform=FacebookAds&method=processAccessTokenCode',
+            'graphApiVersion' => 'v9.0',
         ]);
-
-        return $fb;
     }
 }

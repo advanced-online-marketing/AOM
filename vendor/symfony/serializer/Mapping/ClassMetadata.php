@@ -32,7 +32,7 @@ class ClassMetadata implements ClassMetadataInterface
      *           class' serialized representation. Do not access it. Use
      *           {@link getAttributesMetadata()} instead.
      */
-    public $attributesMetadata = array();
+    public $attributesMetadata = [];
 
     /**
      * @var \ReflectionClass
@@ -40,19 +40,27 @@ class ClassMetadata implements ClassMetadataInterface
     private $reflClass;
 
     /**
-     * Constructs a metadata for the given class.
+     * @var ClassDiscriminatorMapping|null
      *
-     * @param string $class
+     * @internal This property is public in order to reduce the size of the
+     *           class' serialized representation. Do not access it. Use
+     *           {@link getClassDiscriminatorMapping()} instead.
      */
-    public function __construct($class)
+    public $classDiscriminatorMapping;
+
+    /**
+     * Constructs a metadata for the given class.
+     */
+    public function __construct(string $class, ClassDiscriminatorMapping $classDiscriminatorMapping = null)
     {
         $this->name = $class;
+        $this->classDiscriminatorMapping = $classDiscriminatorMapping;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function getName()
+    public function getName(): string
     {
         return $this->name;
     }
@@ -68,7 +76,7 @@ class ClassMetadata implements ClassMetadataInterface
     /**
      * {@inheritdoc}
      */
-    public function getAttributesMetadata()
+    public function getAttributesMetadata(): array
     {
         return $this->attributesMetadata;
     }
@@ -90,7 +98,7 @@ class ClassMetadata implements ClassMetadataInterface
     /**
      * {@inheritdoc}
      */
-    public function getReflectionClass()
+    public function getReflectionClass(): \ReflectionClass
     {
         if (!$this->reflClass) {
             $this->reflClass = new \ReflectionClass($this->getName());
@@ -100,15 +108,32 @@ class ClassMetadata implements ClassMetadataInterface
     }
 
     /**
+     * {@inheritdoc}
+     */
+    public function getClassDiscriminatorMapping(): ?ClassDiscriminatorMapping
+    {
+        return $this->classDiscriminatorMapping;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function setClassDiscriminatorMapping(ClassDiscriminatorMapping $mapping = null)
+    {
+        $this->classDiscriminatorMapping = $mapping;
+    }
+
+    /**
      * Returns the names of the properties that should be serialized.
      *
      * @return string[]
      */
     public function __sleep()
     {
-        return array(
+        return [
             'name',
             'attributesMetadata',
-        );
+            'classDiscriminatorMapping',
+        ];
     }
 }

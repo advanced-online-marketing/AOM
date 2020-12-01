@@ -1,0 +1,12 @@
+/local
+/vendor
+/composer.lock
+/composer.local.*
+/composer.phar
+/coverage.clover
+.DS_Store
+/.idea
+/builds
+# VIM Swap Files #
+*.swp
+*.swo

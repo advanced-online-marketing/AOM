@@ -14,6 +14,7 @@ namespace Symfony\Component\Serializer\Encoder;
 use Symfony\Component\Serializer\Exception\RuntimeException;
 use Symfony\Component\Yaml\Dumper;
 use Symfony\Component\Yaml\Parser;
+use Symfony\Component\Yaml\Yaml;
 
 /**
  * Encodes YAML data.
@@ -23,12 +24,15 @@ use Symfony\Component\Yaml\Parser;
 class YamlEncoder implements EncoderInterface, DecoderInterface
 {
     const FORMAT = 'yaml';
+    private const ALTERNATIVE_FORMAT = 'yml';
+
+    public const PRESERVE_EMPTY_OBJECTS = 'preserve_empty_objects';
 
     private $dumper;
     private $parser;
-    private $defaultContext = array('yaml_inline' => 0, 'yaml_indent' => 0, 'yaml_flags' => 0);
+    private $defaultContext = ['yaml_inline' => 0, 'yaml_indent' => 0, 'yaml_flags' => 0];
 
-    public function __construct(Dumper $dumper = null, Parser $parser = null, array $defaultContext = array())
+    public function __construct(Dumper $dumper = null, Parser $parser = null, array $defaultContext = [])
     {
         if (!class_exists(Dumper::class)) {
             throw new RuntimeException('The YamlEncoder class requires the "Yaml" component. Install "symfony/yaml" to use it.');
@@ -42,9 +46,13 @@ class YamlEncoder implements EncoderInterface, DecoderInterface
     /**
      * {@inheritdoc}
      */
-    public function encode($data, $format, array $context = array())
+    public function encode($data, $format, array $context = [])
     {
         $context = array_merge($this->defaultContext, $context);
+
+        if (isset($context[self::PRESERVE_EMPTY_OBJECTS])) {
+            $context['yaml_flags'] |= Yaml::DUMP_OBJECT_AS_MAP;
+        }
 
         return $this->dumper->dump($data, $context['yaml_inline'], $context['yaml_indent'], $context['yaml_flags']);
     }
@@ -54,13 +62,13 @@ class YamlEncoder implements EncoderInterface, DecoderInterface
      */
     public function supportsEncoding($format)
     {
-        return self::FORMAT === $format;
+        return self::FORMAT === $format || self::ALTERNATIVE_FORMAT === $format;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function decode($data, $format, array $context = array())
+    public function decode($data, $format, array $context = [])
     {
         $context = array_merge($this->defaultContext, $context);
 
@@ -72,6 +80,6 @@ class YamlEncoder implements EncoderInterface, DecoderInterface
      */
     public function supportsDecoding($format)
     {
-        return self::FORMAT === $format;
+        return self::FORMAT === $format || self::ALTERNATIVE_FORMAT === $format;
     }
 }

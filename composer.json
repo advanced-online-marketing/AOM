@@ -2,6 +2,8 @@
   "require": {
     "php": ">=5.5.0",
     "bramus/monolog-colored-line-formatter": "~2.0",
-    "googleads/googleads-php-lib": "^34.0.0"
+    "facebook/php-business-sdk": "^9.0.1",
+    "googleads/googleads-php-lib": "^34.0.0",
+    "league/oauth2-facebook": "^2.0"
   }
 }

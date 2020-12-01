@@ -1,10 +1,10 @@
 # ANSI PHP
 
+[![Build Status](https://img.shields.io/travis/bramus/ansi-php.svg?style=flat-square)](http://travis-ci.org/bramus/ansi-php) [![Source](http://img.shields.io/badge/source-bramus/ansi--php-blue.svg?style=flat-square)](https://github.com/bramus/ansi-php) [![Version](https://img.shields.io/packagist/v/bramus/ansi-php.svg?style=flat-square)](https://packagist.org/packages/bramus/ansi-php) [![Downloads](https://img.shields.io/packagist/dt/bramus/ansi-php.svg?style=flat-square)](https://packagist.org/packages/bramus/ansi-php/stats) [![License](https://img.shields.io/packagist/l/bramus/ansi-php.svg?style=flat-square)](https://github.com/bramus/ansi-php/blob/master/LICENSE)
+
 ANSI Control Functions and ANSI Control Sequences for PHP CLI Apps
 
 Built by Bramus! - [https://www.bram.us/](https://www.bram.us/)
-
-[![Build Status](https://api.travis-ci.org/bramus/ansi-php.png)](http://travis-ci.org/bramus/ansi-php)
 
 ## About
 
@@ -36,7 +36,7 @@ Other Control Sequences – such as moving the cursor – are not (yet) supporte
 
 An example library that uses `bramus/ansi-php` is [`bramus/monolog-colored-line-formatter`](https://github.com/bramus/monolog-colored-line-formatter). It uses `bramus/ansi-php`'s SGR support to colorize the output:
 
-![Monolog Colored Line Formatter](https://raw.githubusercontent.com/bramus/monolog-colored-line-formatter/master/screenshots/colorscheme-default.gif)
+![Monolog Colored Line Formatter](https://user-images.githubusercontent.com/11269635/28756233-c9f63abe-756a-11e7-883f-a084f35c55e7.gif)
 
 ## Prerequisites/Requirements
 
@@ -46,7 +46,7 @@ An example library that uses `bramus/ansi-php` is [`bramus/monolog-colored-line-
 
 Installation is possible using Composer
 
-```
+```shell
 composer require bramus/ansi-php ~3.0
 ```
 
@@ -58,7 +58,7 @@ If you're feeling adventurous, you're of course free to use the raw `ControlFunc
 
 ### Quick example
 
-```
+```php
 use \Bramus\Ansi\Ansi;
 use \Bramus\Ansi\Writers\StreamWriter;
 use \Bramus\Ansi\ControlSequences\EscapeSequences\Enums\SGR;
@@ -69,7 +69,7 @@ $ansi = new Ansi(new StreamWriter('php://stdout'));
 // Output some styled text on screen, along with a Line Feed and a Bell
 $ansi->color(array(SGR::COLOR_FG_RED, SGR::COLOR_BG_WHITE))
      ->blink()
-     ->text('I will be blinking red on a wite background.)
+     ->text('I will be blinking red on a white background.')
      ->nostyle()
      ->text(' And I will be normally styled.')
      ->lf()
@@ -150,7 +150,7 @@ These shorthands write EL ANSI Escape Sequences to the writer.
 
 ### The Basics
 
-```
+```php
 // Create Ansi Instance
 $ansi = new \Bramus\Ansi\Ansi();
 
@@ -161,9 +161,13 @@ $ansi->bell();
 $ansi->text('Hello World!');
 ```
 
+_NOTE:_ As no `$writer` is passed into the constructor of `\Bramus\Ansi\Ansi`, the default `StreamWriter` writing to `php://stdout` is used.
+
 ### Using a `FlushableWriter`
 
-```
+Flushable Writers are writers that cache the data and only output it when flushed using its `flush()` function. The `BufferWriter` and `ProxyWriter` implement this interface.
+
+```php
 // Create Ansi Instance
 $ansi = new \Bramus\Ansi\Ansi(new \Bramus\Ansi\Writers\BufferWriter());
 
@@ -181,7 +185,7 @@ echo $ansi->get();
 
 `bramus/ansi-php`'s wrapper `Ansi` class supports chaining.
 
-```
+```php
 // Create Ansi Instance
 $ansi = new \Bramus\Ansi\Ansi();
 
@@ -192,7 +196,7 @@ $ansi->lf()->text('hello')->bell()->lf();
 
 ### Styling Text: The Basics
 
-```
+```php
 $ansi = new \Bramus\Ansi\Ansi();
 $ansi->bold()->underline()->text('I will be bold and underlined')->lf();
 ```
@@ -200,7 +204,7 @@ $ansi->bold()->underline()->text('I will be bold and underlined')->lf();
 __IMPORTANT__ Select Graphic Rendition works in such a way that text styling  you have set will remain active until you call `nostyle()` or `reset()` to return to the default styling.
 
 
-```
+```php
 $ansi = new \Bramus\Ansi\Ansi();
 
 $ansi->bold()->underline()->text('I will be bold and underlined')->lf();
@@ -232,7 +236,7 @@ Colors, and other text styling options, are defined as contants on `\Bramus\Ansi
 - `SGR::COLOR_FG_PURPLE_BRIGHT`: Purple Foreground Color (Bright)
 - `SGR::COLOR_FG_CYAN_BRIGHT`: Cyan Foreground Color (Bright)
 - `SGR::COLOR_FG_WHITE_BRIGHT`: White Foreground Color (Bright)
-- `SGR::COLOR_FG_RESET': Default Foreground Color
+- `SGR::COLOR_FG_RESET`: Default Foreground Color
 
 #### Background Colors
 
@@ -252,11 +256,11 @@ Colors, and other text styling options, are defined as contants on `\Bramus\Ansi
 - `SGR::COLOR_BG_PURPLE_BRIGHT`: Purple Background Color (Bright)
 - `SGR::COLOR_BG_CYAN_BRIGHT`: Cyan Background Color (Bright)
 - `SGR::COLOR_BG_WHITE_BRIGHT`: White Background Color (Bright)
-- `SGR::COLOR_BG_RESET': Default Background Color
+- `SGR::COLOR_BG_RESET`: Default Background Color
 
 Pass one of these into `$ansi->color()` and the color will be set.
 
-```
+```php
 use \Bramus\Ansi\ControlSequences\EscapeSequences\Enums\SGR;
 
 $ansi = new \Bramus\Ansi\Ansi();
@@ -267,7 +271,8 @@ $ansi->color(SGR::COLOR_FG_RED)
 ```
 
 To set the foreground and background color in one call, pass them using an array to `$ansi->color()`
-```
+
+```php
 use \Bramus\Ansi\ControlSequences\EscapeSequences\Enums\SGR;
 
 $ansi = new \Bramus\Ansi\Ansi();
@@ -282,7 +287,7 @@ $ansi->color(array(SGR::COLOR_FG_RED, SGR::COLOR_BG_WHITE))
 
 As all raw `ControlFunction` and `ControlSequence` classes are provided with a `__toString()` function it's perfectly possible to directly `echo` some `bramus/ansi-php` instance.
 
-```
+```php
 // Output a Bell Control Character
 echo new \Bramus\Ansi\ControlFunctions\Bell();
 
@@ -294,7 +299,7 @@ echo new \Bramus\Ansi\ControlSequences\EscapeSequences\ED(
 
 To fetch their contents, use the `get()` function:
 
-```
+```php
 // Get ANSI string for a Bell Control Character
 $bell = (new \Bramus\Ansi\ControlFunctions\Bell())->get();
 
