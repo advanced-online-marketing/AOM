@@ -1,6 +1,6 @@
 ---
 layout: docs
-title: Piwik AOM Plugin Documentation - Advertiser's Platforms
+title: Matamo AOM Plugin Documentation - Advertiser's Platforms
 ---
 
 <h2 class="title text-center">Tracking params, importing and merging</h2>
@@ -33,8 +33,8 @@ title: Piwik AOM Plugin Documentation - Advertiser's Platforms
 
 <p>For importing and merging you must activate AdWords and provide API credentials within this plugin's settings. This
     requires a <a href="https://code.google.com/apis/console#access">web application in the Google API console</a> with
-    Piwik's full URI (e.g.
-    <a href="http://local.piwik.de?module=AOM&amp;action=platformAction&amp;platform=AdWords&amp;method=processOAuthRedirect">http://local.piwik.de?module=AOM&amp;action=platformAction&amp;platform=AdWords&amp;method=processOAuthRedirect</a>)
+    Matamo's full URI (e.g.
+    <a href="http://local.matamo.de?module=AOM&amp;action=platformAction&amp;platform=AdWords&amp;method=processOAuthRedirect">http://local.matamo.de?module=AOM&amp;action=platformAction&amp;platform=AdWords&amp;method=processOAuthRedirect</a>)
     being an authorized redirect URI.</p>
 
 <p>AdWords data is being (re)imported for the last 3 days (as old data might change). At first a
@@ -98,7 +98,7 @@ title: Piwik AOM Plugin Documentation - Advertiser's Platforms
 
 <p>For importing and merging you must activate Bing and provide API credentials within this plugin's settings. This
     requires a <a href="https://account.live.com/developers/applications">mobile or desktop client app</a> at Bing.
-    Piwik's URI (e.g. <a href="http://local.piwik.de/">http://local.piwik.de/</a>) must be added at Bing to the app's
+    Matamo's URI (e.g. <a href="http://local.matamo.de/">http://local.matamo.de/</a>) must be added at Bing to the app's
     valid redirect URLs under "API settings". </p>
 
 <p>Bing's data is being imported once a day. </p>
@@ -207,9 +207,12 @@ title: Piwik AOM Plugin Documentation - Advertiser's Platforms
 <h3>Importing &amp; merging</h3>
 
 <p>For importing and merging you must activate Facebook Ads and provide API credentials within this plugin's settings.
-    This requires a <a href="https://developers.facebook.com/docs/marketing-api/quickstart">Facebook App with Marketing
-    API access</a>. Piwik's URI (e.g. <a href="http://local.piwik.de/">http://local.piwik.de/</a>) must be added to the
-    app's valid OAuth redirect URIs.</p>
+    This requires a <a href="https://developers.facebook.com/docs/apps/">Facebook App</a> with the functionality Business Integration.
+    The App needs to be connected with a Business Manager Account.
+    Add FacebookLogin to Products and add an Oauth Redirect URL (e.g. https://aom.de/?module=AOM&action=platformAction&platform=FacebookAds&method=processAccessTokenCode)
+    For adding an AOM Facebook account AppId and AppSecret are found at the Facebook App->Dashboard->Settings. The accountId can be found at <a href="https://business.facebook.com/settings/ad-accounts/">https://business.facebook.com/settings/ad-accounts/</a>.
+    The FacebookLogin is valid for 2-3 Month after that time a new login is required.
+</p>
 
 <p>Facebook Ads' data is being imported once a day.</p>
 
@@ -280,8 +283,8 @@ title: Piwik AOM Plugin Documentation - Advertiser's Platforms
 <h2 class="sub-title text-center">Individual campaigns</h2>
 
 <p>For some campaigns, such as email marketing partnerships or CPA deals, there might not be an advertising platform
-    with an API, where you can fetch the additional data (like campaign names and cost) from. Therefore Piwik AOM allows
-    you to provide this data and Piwik AOM distributes the costs to the visits that resulted from the campaign (even if
+    with an API, where you can fetch the additional data (like campaign names and cost) from. Therefore Matamo AOM allows
+    you to provide this data and Matamo AOM distributes the costs to the visits that resulted from the campaign (even if
     there were no visits the costs are still being considered). Here are some examples:</p>
 
 <h4>Email marketing campaign</h4>
@@ -289,10 +292,10 @@ title: Piwik AOM Plugin Documentation - Advertiser's Platforms
 <p>Imagine you've created an email marketing campaign to advertise a special christmas deal which cost you $ 1000 and
     that you are going to send out on December 1st 2017. From previous email marketing campaigns you know that about 95%
     of visits occur within the first week after the email has been send out. You have added the
-    <a href="https://piwik.org/docs/tracking-campaigns/#tracking-campaigns-using-url-parameters" target="_blank">
+    <a href="https://matamo.org/docs/tracking-campaigns/#tracking-campaigns-using-url-parameters" target="_blank">
     tracking parameter</a> <code>pk_campaign=Email-December-2017</code>.</p>
 
-<p>Now, in Piwik AOM you would simply create an individual campaign before December 1st with the following data:</p>
+<p>Now, in Matamo AOM you would simply create an individual campaign before December 1st with the following data:</p>
 
 <table><thead>
 <tr>
@@ -343,12 +346,12 @@ title: Piwik AOM Plugin Documentation - Advertiser's Platforms
 </tbody></table>
 
 
-<p>As soon as you add individual campaigns like these to Piwik AOM, Piwik AOM first distributes the cost you provided
+<p>As soon as you add individual campaigns like these to Matamo AOM, Matamo AOM first distributes the cost you provided
     equally over all days within the campaign duration which you provided. Within these days, cost is equally
     distributed between visits.</p>
 
-<p>You cannot distribute costs to visits that have been detected by Piwik AOM, i.e. you cannot distribute (additional)
-    cost for example to an AdWords campaign that already got additional data from AdWords. Piwik AOM takes care of that,
+<p>You cannot distribute costs to visits that have been detected by Matamo AOM, i.e. you cannot distribute (additional)
+    cost for example to an AdWords campaign that already got additional data from AdWords. Matamo AOM takes care of that,
     but <strong>you need to make sure that your specifications don't overlap</strong>, e.g. that you distribute the cost
     of two email marketing campaigns to the same pool of visits.</p>
 
@@ -362,12 +365,12 @@ title: Piwik AOM Plugin Documentation - Advertiser's Platforms
     similar - but this is a topic on our future roadmap!</p>
 
 
-<!-- Other advertising platforms and Piwik's default tracking params -->
-<h2 class="sub-title text-center">Other advertising platforms and Piwik's default tracking params</h2>
+<!-- Other advertising platforms and Matamo's default tracking params -->
+<h2 class="sub-title text-center">Other advertising platforms and Matamo's default tracking params</h2>
 
 <p>You should not use any of the params listed above when the advertising platform you are using is not listed here.</p>
 
-<p>Piwik's <a href="http://piwik.org/docs/tracking-campaigns/">default tracking params</a> <code>pk_campaign</code> and
+<p>Matamo's <a href="http://matamo.org/docs/tracking-campaigns/">default tracking params</a> <code>pk_campaign</code> and
     <code>pk_kwd</code> (or the tracking params provided by the
-    <a href="https://plugins.piwik.org/MarketingCampaignsReporting">Marketing Campaigns Reporting plugin</a>) should
+    <a href="https://plugins.matamo.org/MarketingCampaignsReporting">Marketing Campaigns Reporting plugin</a>) should
     be used for both supported and unsupported advertising platforms.</p>
