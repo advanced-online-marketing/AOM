@@ -7,45 +7,21 @@
  */
 namespace Piwik\Plugins\AOM\Platforms\FacebookAds;
 
-use DateTime;
-use Exception;
+use FacebookAds\Api;
+use FacebookAds\Object\AdAccount;
 use FacebookAds\Object\Fields\AdsInsightsFields;
 use FacebookAds\Object\Values\AdsInsightsLevelValues;
 use Monolog\Logger;
+use Piwik\Db;
 use Piwik\Plugins\AOM\AOM;
 use Piwik\Plugins\AOM\Platforms\AbstractImporter;
 use Piwik\Plugins\AOM\Platforms\ImporterInterface;
+use Piwik\Plugins\AOM\Services\DatabaseHelperService;
 use Piwik\Plugins\AOM\SystemSettings;
-
-use FacebookAds\Api;
-use FacebookAds\Logger\CurlLogger;
-use FacebookAds\Object\AdAccount;
-use FacebookAds\Object\Campaign;
-use FacebookAds\Object\Fields\CampaignFields;
 
 
 class Importer extends AbstractImporter implements ImporterInterface
 {
-
-    /**
-     * @var array
-     */
-    protected $adsInsightsFields = [
-        AdsInsightsFields::DATE_START,
-        AdsInsightsFields::ACCOUNT_NAME,
-        AdsInsightsFields::ACCOUNT_ID,
-        AdsInsightsFields::CAMPAIGN_ID,
-        AdsInsightsFields::CAMPAIGN_NAME,
-        AdsInsightsFields::ADSET_ID,
-        AdsInsightsFields::ADSET_NAME,
-        AdsInsightsFields::AD_NAME,
-        AdsInsightsFields::AD_ID,
-        AdsInsightsFields::IMPRESSIONS,
-        AdsInsightsFields::CLICKS,
-        AdsInsightsFields::INLINE_LINK_CLICKS,
-        AdsInsightsFields::SPEND,
-    ];
-
     /**
      * Imports all active accounts day by day
      */
@@ -66,89 +42,34 @@ class Importer extends AbstractImporter implements ImporterInterface
     }
 
     /**
-     * @param string $accountId
      * @param array $account
      * @param string $date
      * @throws \Exception
      */
     private function importAccount($account, $date)
     {
-        $this->log(Logger::INFO, 'Will import FacebookAds account ' . $accountId. ' for date ' . $date . ' now.');
+        $accountId= $account['accountId'];
+        
+        $this->log(Logger::INFO, 'Will import FacebookAds account ' . $account['accountId']. ' for date ' . $date . ' now.');
 
-//        var_dump($account);
-
-//        var_dump([$account['clientId'], $account['clientSecret'], $account['accessToken']]);
         $api = Api::init($account['clientId'], $account['clientSecret'], $account['accessToken']);
-
-        $adAccount = new AdAccount($account['accountId'], null, $api);
-
-
-        foreach ($this->fetchAdsInsights($adAccount, $date) as $insight) {
-            var_dump([
-$insight->{AdsInsightsFields::ACCOUNT_NAME},
-$insight->{AdsInsightsFields::ACCOUNT_ID},
-$insight->{AdsInsightsFields::CAMPAIGN_NAME},
-$insight->{AdsInsightsFields::CAMPAIGN_ID},
-$insight->{AdsInsightsFields::ADSET_NAME},
-$insight->{AdsInsightsFields::ADSET_ID},
-$insight->{AdsInsightsFields::AD_NAME},
-$insight->{AdsInsightsFields::AD_ID},
-$insight->{AdsInsightsFields::CLICKS},
-$insight->{AdsInsightsFields::IMPRESSIONS},
-$insight->{AdsInsightsFields::SPEND},
-                ]
-            );
-            die();
-//                $ad = new FacebookAds();
-//                $ad
-//                    ->setDate(new DateTime($date))
-//                    ->setSaasUserId($user->getId())
-//                    ->setAccountName($insight->{AdsInsightsFields::ACCOUNT_NAME})
-//                    ->setAccountId($insight->{AdsInsightsFields::ACCOUNT_ID})
-//                    ->setCampaignName($insight->{AdsInsightsFields::CAMPAIGN_NAME})
-//                    ->setCampaignId($insight->{AdsInsightsFields::CAMPAIGN_ID})
-//                    ->setAdsetName($insight->{AdsInsightsFields::ADSET_NAME})
-//                    ->setAdSetId($insight->{AdsInsightsFields::ADSET_ID})
-//                    ->setAdName($insight->{AdsInsightsFields::AD_NAME})
-//                    ->setAdId($insight->{AdsInsightsFields::AD_ID})
-//                    ->setClicks($insight->{AdsInsightsFields::CLICKS})
-//                    ->setImpressions($insight->{AdsInsightsFields::IMPRESSIONS})
-//                    ->setCosts($insight->{AdsInsightsFields::SPEND});
-//
-//                $this->entityManager->persist($ad);
-        }
-
-
-
-//        $adAccount = new AdAccount($account['accountId']);
-
-
-        var_dump($adAccount->getData());
+        $adAccount = new AdAccount('act_'.$accountId, null, $api);
         
-        $cursor = $adAccount->getCampaigns();
+        $this->deleteExistingData(AOM::PLATFORM_FACEBOOK_ADS, $accountId, $account['websiteId'], $date);
 
-// Loop over objects
-        foreach ($cursor as $campaign) {
-            echo $campaign->{CampaignFields::NAME}.PHP_EOL;
-        }
-
-        
-
-
-
-//        $this->deleteExistingData(AOM::PLATFORM_FACEBOOK_ADS, $accountId, $account['websiteId'], $date);
-
-//        throw new Exception('Not implemented');
-    }
-
-    /**
-     * @param AdAccount $adAccount
-     * @param string $date
-     * @return \FacebookAds\ApiRequest|\FacebookAds\Cursor|\FacebookAds\Http\ResponseInterface|null
-     */
-    protected function fetchAdsInsights(AdAccount $adAccount, $date)
-    {
-        $insights = $adAccount->getInsights($this->adsInsightsFields, [
+        $insights = $adAccount->getInsights([
+            AdsInsightsFields::DATE_START,
+            AdsInsightsFields::ACCOUNT_NAME,
+            AdsInsightsFields::CAMPAIGN_ID,
+            AdsInsightsFields::CAMPAIGN_NAME,
+            AdsInsightsFields::ADSET_ID,
+            AdsInsightsFields::ADSET_NAME,
+            AdsInsightsFields::AD_NAME,
+            AdsInsightsFields::AD_ID,
+            AdsInsightsFields::IMPRESSIONS,
+            AdsInsightsFields::INLINE_LINK_CLICKS,
+            AdsInsightsFields::SPEND,
+        ], [
             'level' => AdsInsightsLevelValues::AD,
             'time_range' => [
                 'since' => $date,
@@ -156,11 +77,32 @@ $insight->{AdsInsightsFields::SPEND},
             ],
         ]);
 
-        $insights->setUseImplicitFetch(true);
-
-        return $insights;
+        foreach ($insights as $insight) {
+            Db::query(
+                'INSERT INTO ' . DatabaseHelperService::getTableNameByPlatformName(AOM::PLATFORM_FACEBOOK_ADS)
+                . ' (id_account_internal, idsite, date, account_id, account_name, campaign_id, campaign_name, '
+                . 'adset_id, adset_name, ad_id, ad_name, impressions, clicks, cost, ts_created) '
+                . 'VALUE (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())',
+                [
+                    $accountId,
+                    $account['websiteId'],
+                    $insight->getData()[AdsInsightsFields::DATE_START],
+                    $accountId,
+                    $insight->getData()[AdsInsightsFields::ACCOUNT_NAME],
+                    $insight->getData()[AdsInsightsFields::CAMPAIGN_ID],
+                    $insight->getData()[AdsInsightsFields::CAMPAIGN_NAME],
+                    $insight->getData()[AdsInsightsFields::ADSET_ID],
+                    $insight->getData()[AdsInsightsFields::ADSET_NAME],
+                    $insight->getData()[AdsInsightsFields::AD_ID],
+                    $insight->getData()[AdsInsightsFields::AD_NAME],
+                    $insight->getData()[AdsInsightsFields::IMPRESSIONS],
+                    $insight->getData()[AdsInsightsFields::INLINE_LINK_CLICKS],
+                    $insight->getData()[AdsInsightsFields::SPEND],
+                ]
+            );
+        }
+        $this->log(Logger::INFO, 'Imported '.count($insights).' ads from ' . $account['accountId']. ' for date ' . $date . ' now.');
     }
-
 
     /**
      * Convenience function for shorter logging statements
