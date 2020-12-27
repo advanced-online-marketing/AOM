@@ -90,6 +90,17 @@ class MergerPlatformDataOfVisit
     }
 
     /**
+     * @param array|null $platformData
+     * @return $this
+     */
+    public function addPlatformData($platformData)
+    {
+        $this->platformData = array_merge($this->platformData, $platformData);
+
+        return $this;
+    }
+
+    /**
      * @return null
      */
     public function getPlatformKey()
