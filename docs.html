@@ -1,12 +1,12 @@
 ---
 layout: docs
-title: Piwik AOM Plugin Documentation
+title: Matamo AOM Plugin Documentation
 ---
 
-<h2 class="title text-center">Piwik AOM Plugin Documentation</h2>
+<h2 class="title text-center">Matamo AOM Plugin Documentation</h2>
 <p>Integrate additional data like campaign names, ad impressions, costs etc. from advertising platforms (such as
     Google AdWords, Microsoft Bing, Criteo, Facebook Ads and Taboola) and individual campaigns (such as cost per
-    view/click/acquisition and fixed price per months deals) into Piwik and combine that data with individual visits -
+    view/click/acquisition and fixed price per months deals) into Matamo and combine that data with individual visits -
     <strong>create a whole bunch of new opportunities!</strong></p>
 
 <!-- Advertiser's platforms -->
@@ -16,12 +16,12 @@ title: Piwik AOM Plugin Documentation
 
 <p>To map individual visits with the data from the advertising platforms, all links from the platforms must have
     <a href="advertisers-platforms.html">additional params</a> that supply mapping-related data like campaign and ad IDs
-    to the Piwik AOM plugin. This data is stored in the database columns <code>log_visit.aom_platform</code> and
+    to the Matamo AOM plugin. This data is stored in the database columns <code>log_visit.aom_platform</code> and
     <code>log_visit.aom_ad_params</code>. When a visitor returns with other tracking params, a new visit is started
     automatically.</p>
 
 <p>After you have set up a cronjob <code>./console aom:process</code> that gets executed every minute a copy of every
-    single Piwik visit is written (and conversions are added) to <code>aom_visits</code>.</p>
+    single Matamo visit is written (and conversions are added) to <code>aom_visits</code>.</p>
 
 <p>After you have set up <a href="http://piwik.org/docs/setup-auto-archiving/">auto archiving</a> the following two
     tasks will be executed by AOM:</p>
@@ -33,16 +33,16 @@ title: Piwik AOM Plugin Documentation
 
 <h4 class="sub-title">2. Merge imported data with individual visits</h4>
 <p>The background job iterates over all imported advertising platform data and updates the visits in the
-    <code>aom_visits</code> table with that data. If no real Piwik visits match the advertising platform's data, an
+    <code>aom_visits</code> table with that data. If no real Matamo visits match the advertising platform's data, an
     artificial visit is being created in the <code>aom_visits</code> table to make sure that all cost is allocated.</p>
 
-<p>The data in <code>aom_visits</code> contains both all Piwik visits and all costs. It is used in the marketing
-    performance report in the Piwik UI and it can be used via the <a href="api.html">API endpoints provided by the Piwik
+<p>The data in <code>aom_visits</code> contains both all Matamo visits and all costs. It is used in the marketing
+    performance report in the Matamo UI and it can be used via the <a href="api.html">API endpoints provided by the Matamo
     AOM plugin</a> (e.g. for further processing in a data warehouse).</p>
 
 <p>Whenever a visit is added to or updated in the <code>aom_visits</code> table, an
     <code>AOM.aomVisitAddedOrUpdated</code> event is posted. You can listen to that event within your separate plugin
-    to integrate Piwik AOM in your <strong>event oriented architecture</strong> (e.g. to publish those events to
+    to integrate Matamo AOM in your <strong>event oriented architecture</strong> (e.g. to publish those events to
     external systems or message brokers).</p>
 
 
@@ -75,11 +75,11 @@ title: Piwik AOM Plugin Documentation
     aom:process</code> (execution of the latter every minute) that updates visits and conversions in the
     <code>aom_visits</code> table.</p>
 
-<p>You can install the Piwik AOM plugin from the <a href="https://plugins.piwik.org/AOM">Piwik marketplace</a>.</p>
+<p>You can install the Matamo AOM plugin from the <a href="https://plugins.matomo.org/AOM?matomoversion=3">Matamo marketplace</a>.</p>
 
 <p>Set up <a href="http://piwik.org/docs/setup-auto-archiving/">auto archiving</a> to automatically import and merge
     data from the advertiser's platforms. The auto archiving cron job executes the <code>core:archive command</code>
-    which triggers <a href="https://developer.piwik.org/api-reference/Piwik/TaskScheduler">Piwik's TaskScheduler</a> and
+    which triggers <a href="https://developer.piwik.org/api-reference/Piwik/TaskScheduler">Matamo's TaskScheduler</a> and
     thus this plugin's tasks (see <code>Tasks.php</code>). You can trigger all of this plugin's background jobs manually
     by executing <code>./console core:run-scheduled-tasks --force</code>.</p>
 
@@ -111,6 +111,10 @@ title: Piwik AOM Plugin Documentation
 
 <!-- Changelog -->
 <h2 class="sub-title text-center">Changelog</h2>
+<p><strong>1.5.0</strong> on 1 January 2020</p>
+<ul>
+    <li>Add support for FacebookAds</li>
+</ul>
 <p><strong>1.4.0</strong> on 1 April 2018</p>
 <ul>
     <li>Updates AdWords API to 2018 version</li>
