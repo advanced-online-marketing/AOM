@@ -12,7 +12,6 @@ use Piwik\Db;
 use Piwik\Metrics\Formatter;
 use Piwik\Piwik;
 use Piwik\Plugins\AOM\AOM;
-use Piwik\Plugins\AOM\Platforms\MarketingPerformanceSubTables;
 use Piwik\Plugins\AOM\Platforms\AbstractPlatform;
 use Piwik\Plugins\AOM\Platforms\PlatformInterface;
 use Piwik\Tracker\Request;
@@ -54,13 +53,11 @@ class FacebookAds extends AbstractPlatform implements PlatformInterface
     /**
      * Activates sub tables for the marketing performance report in the Piwik UI for FacebookAds.
      *
-     * TODO: Implement me!
-     *
      * @return MarketingPerformanceSubTables|false
      */
     public function getMarketingPerformanceSubTables()
     {
-        return false;
+        return new MarketingPerformanceSubTables();
     }
 
     /**
@@ -101,9 +98,9 @@ class FacebookAds extends AbstractPlatform implements PlatformInterface
                         $platformData['adset_name'],
                     ]
                 );
-            } else {
-                return Piwik::translate('AOM_Platform_VisitDescription_FacebookAds_Incomplete');
             }
+
+            return Piwik::translate('AOM_Platform_VisitDescription_FacebookAds_Incomplete');
         }
 
         return false;
